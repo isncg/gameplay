@@ -479,7 +479,11 @@ public:
      * @return A MaterialParameter for the specified name.
      */
     MaterialParameter* getParameter(const char* name) const;
+    template<typename T>
+    void Set(const char* name, T&& value) const;
 
+    template<typename T>
+    void Set(const char* name, T* values, int count) const;
     /**
      * Gets the number of material parameters.
      *
@@ -681,6 +685,20 @@ protected:
      */
     static std::vector<AutoBindingResolver*> _customAutoBindingResolvers;
 };
+
+template<typename T>
+inline void RenderState::Set(const char* name, T&& value) const
+{
+    auto param = getParameter(name);
+    param->setValue(value);
+}
+
+template<typename T>
+inline void RenderState::Set(const char* name, T* values, int count) const
+{
+    auto param = getParameter(name);
+    param->setValue(values, count);
+}
 
 }
 

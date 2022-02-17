@@ -183,6 +183,34 @@ Material* Model::setMaterial(const char* vshPath, const char* fshPath, const cha
     return material;
 }
 
+Material* Model::setMaterial(Effect* effect, int partIndex)
+{
+    // Try to create a Material with the given parameters.
+    Material* material = Material::create(effect);
+    if (material == NULL)
+    {
+        GP_ERROR("Failed to create material for model.");
+        return NULL;
+    }
+
+    // Assign the material to us.
+    setMaterial(material, partIndex);
+
+    // Release the material since we now have a reference to it.
+    material->release();
+
+    return material;
+}
+
+void Model::setMaterial(Effect* effect, std::vector<std::function<void(Material*)>>&& callbacks)
+{
+	for (int i = 0; i < callbacks.size(); i++)
+	{
+		auto mat = setMaterial(effect, i);
+		callbacks[i](mat);
+	}
+}
+
 Material* Model::setMaterial(const char* materialPath, int partIndex)
 {
     // Try to create a Material from the specified material file.

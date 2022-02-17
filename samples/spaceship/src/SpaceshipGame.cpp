@@ -117,32 +117,27 @@ void SpaceshipGame::initializeSpaceship()
 
     _shipGroupNode = _scene->findNode("gSpaceShip");
 
-    // Setup spaceship model
-    // Part 0
+    auto effect_colored = Effect::createFromFile("res/shaders/colored.vert", "res/shaders/colored.frag", "SPECULAR;DIRECTIONAL_LIGHT_COUNT 1");
+    auto effect_textured = Effect::createFromFile("res/shaders/textured.vert", "res/shaders/textured.frag", "MODULATE_COLOR");
+    // Setup spaceship model   
     _shipNode = _scene->findNode("pSpaceShip");
-    material = dynamic_cast<Model*>(_shipNode->getDrawable())->setMaterial("res/shaders/colored.vert", "res/shaders/colored.frag", "SPECULAR;DIRECTIONAL_LIGHT_COUNT 1", 0);
-    material->getParameter("u_diffuseColor")->setValue(Vector4(0.53544f, 0.53544f, 0.53544f, 1.0f));
-    initializeMaterial(material, true, true);
-    // Part 1
-    material = dynamic_cast<Model*>(_shipNode->getDrawable())->setMaterial("res/shaders/colored.vert", "res/shaders/colored.frag", "SPECULAR;DIRECTIONAL_LIGHT_COUNT 1", 1);
-    material->getParameter("u_diffuseColor")->setValue(Vector4(0.8f, 0.8f, 0.8f, 1.0f));
-    _shipSpecularParameter = material->getParameter("u_specularExponent");
-    initializeMaterial(material, true, true);
-    // Part 2
-    material = dynamic_cast<Model*>(_shipNode->getDrawable())->setMaterial("res/shaders/colored.vert", "res/shaders/colored.frag", "SPECULAR;DIRECTIONAL_LIGHT_COUNT 1", 2);
-    material->getParameter("u_diffuseColor")->setValue(Vector4(0.280584f, 0.5584863f, 0.6928f, 1.0f));
-    initializeMaterial(material, true, true);
+	dynamic_cast<Model*>(_shipNode->getDrawable())->setMaterial(effect_colored,
+		{
+			[this](Material* m) {m->Set("u_diffuseColor", Vector4(0.53544f,  0.53544f,   0.53544f, 1.0f)); initializeMaterial(m, true, true); }, // Part 0
+			[this](Material* m) {m->Set("u_diffuseColor", Vector4(0.8f,      0.8f,       0.8f,     1.0f)); initializeMaterial(m, true, true); _shipSpecularParameter = m->getParameter("u_specularExponent"); }, // Part 1
+			[this](Material* m) {m->Set("u_diffuseColor", Vector4(0.280584f, 0.5584863f, 0.6928f,  1.0f)); initializeMaterial(m, true, true); }, // Part 2
+		});
 
     // Setup spaceship propulsion model
     _propulsionNode = _scene->findNode("pPropulsion");
-    material = dynamic_cast<Model*>(_propulsionNode->getDrawable())->setMaterial("res/shaders/colored.vert", "res/shaders/colored.frag", "SPECULAR;DIRECTIONAL_LIGHT_COUNT 1");
-    material->getParameter("u_diffuseColor")->setValue(Vector4(0.8f, 0.8f, 0.8f, 1.0f));
+    material = dynamic_cast<Model*>(_propulsionNode->getDrawable())->setMaterial(effect_colored);
+    material->Set("u_diffuseColor",Vector4(0.8f, 0.8f, 0.8f, 1.0f));
     initializeMaterial(material, true, true);
 
     // Glow effect node
     _glowNode = _scene->findNode("pGlow");
-    material = dynamic_cast<Model*>(_glowNode->getDrawable())->setMaterial("res/shaders/textured.vert", "res/shaders/textured.frag", "MODULATE_COLOR");
-    material->getParameter("u_diffuseTexture")->setValue("res/propulsion_glow.png", true);
+    material = dynamic_cast<Model*>(_glowNode->getDrawable())->setMaterial(effect_textured);
+    material->Set("u_diffuseTexture", Texture::Sampler::create("res/propulsion_glow.png", true));
     _glowDiffuseParameter = material->getParameter("u_modulateColor");
     initializeMaterial(material, false, false);
 
@@ -200,21 +195,21 @@ void SpaceshipGame::initializeMaterial(Material* material, bool lighting, bool s
     {
         // Apply lighting material parameters
         material->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
-        material->getParameter("u_ambientColor")->setValue(AMBIENT_LIGHT_COLOR);
+        material->Set("u_ambientColor", AMBIENT_LIGHT_COLOR);
 
         Node* lightNode = _scene->findNode("directionalLight1");
         Vector3 lightDirection = lightNode->getForwardVector();
         lightDirection.normalize();
         if (lightNode)
         {
-            material->getParameter("u_directionalLightColor[0]")->setValue(lightNode->getLight()->getColor());
-            material->getParameter("u_directionalLightDirection[0]")->setValue(lightDirection);
+            material->Set("u_directionalLightColor[0]", lightNode->getLight()->getColor());
+            material->Set("u_directionalLightDirection[0]", lightDirection);
         }
 
         if (specular)
         {
             // Apply specular lighting parameters
-            material->getParameter("u_specularExponent")->setValue(SPECULAR);
+			material->Set("u_specularExponent", SPECULAR);
             material->setParameterAutoBinding("u_worldViewMatrix", RenderState::WORLD_VIEW_MATRIX);
             material->setParameterAutoBinding("u_cameraPosition", RenderState::CAMERA_WORLD_POSITION);
         }
